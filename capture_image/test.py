@@ -1,6 +1,5 @@
 from time import sleep
 from picamera import PiCamera
-import sys
 
 
 # Create object picamera

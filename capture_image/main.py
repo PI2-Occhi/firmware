@@ -1,7 +1,16 @@
 import click
-from frame import continuos_get_image, take_photo
+from camocchi import Camocchi
+
 
 @click.command()
-@click.option('--time', default=2, help='Number of greetings.')
-@click.option('--name', prompt='camocchi',
-            help='The person to greet.')
+@click.option("-a", "--asy", default=False, help="Definir um tempo.")
+@click.option("-c", "--cont", default=False, help="Definir um tempo.")
+@click.option("-t", "--time", default=2, help="Definir um tempo.")
+@click.option(
+    "-n", "--name", default="exmaple.png", help="Definir nome de saída da imagem."
+)
+@click.option("-d", "--debug", default=False, help="Atividade modo debug.")
+@click.version_option()
+def main(name: str, time: int, debug: bool, asy: bool, cont: bool):
+    cam = Camocchi(name, time, debug, asy, cont)
+    cam.run()
