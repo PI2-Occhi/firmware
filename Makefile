@@ -14,22 +14,22 @@ envs:
 	@echo $(OCCHI_PATH_IMAGE)
 
 takephoto:
-	python capture_image/test.py
+	python camocchi/test.py
 
 check:
-	black capture_image/*.py
+	black camocchi/*.py
 	black tests/unit/*.py
-	flake8 capture_image/*.py
+	flake8 camocchi/*.py
 	flake8 tests/unit/*.py
 	mypy tests
-	mypy capture_image
+	mypy camocchi
 
 flake:
-	flake8 capture_image/*.py
+	flake8 camocchi/*.py
 	flake8 tests/unit/*.py
 
 black:
-	black capture_image/*.py
+	black camocchi/*.py
 	black tests/unit/*.py
 
 test:

@@ -24,7 +24,7 @@ run_requirements = [
     "picamera==1.13",
 ]
 
-with io.open("./capture_image/version.py", encoding="utf8") as version_f:
+with io.open("./camocchi/version.py", encoding="utf8") as version_f:
     version_match = re.search(
         r"^__version__ = ['\"]([^'\"]*)['\"]", version_f.read(), re.M
     )
@@ -37,7 +37,7 @@ with io.open("README.md", encoding="utf8") as readme:
     long_description = readme.read()
 
 setup(
-    name="capture_image",
+    name="camocchi",
     version=version,
     author="Occhi Project",
     author_email="matheusgoisv@gmail.com",
