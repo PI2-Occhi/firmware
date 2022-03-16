@@ -9,22 +9,17 @@ class Camocchi:
         self,
         name: str = os.getenv("OCCHI_PATH_IMAGE", "image.png"),
         time: int = 2,
-        debug: bool = False,
-        cont: bool = False,
-        asy: bool = False,
+        debug: bool = False
     ) -> None:
         self.logger = logging.getLogger("Occhi Log |")
         self.name = name
         self.time = time
         self.debug = debug
-        self.cont = cont
-        self.asy = asy
-        pass
 
     def run(self):
 
-        self.cont and self.continuos_get_image()
-        self.asy and self.take_photo()
+        self.continuos_get_image()
+        # self.take_photo()
 
     """
     Continuos function

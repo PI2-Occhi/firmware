@@ -34,3 +34,6 @@ black:
 
 test:
 	pytest
+
+run:
+	camocchi

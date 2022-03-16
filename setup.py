@@ -14,6 +14,8 @@ dev_requirements = [
     "pytest-flake8==1.0.7",
     "pytest-cov==2.8.1",
     "pytest-mypy>=0.8.0",
+    "click==8.0.4",
+    "picamera==1.13",
 ]
 
 unit_test_requirements = dev_requirements
@@ -22,6 +24,7 @@ integration_test_requirements = dev_requirements
 
 run_requirements = [
     "picamera==1.13",
+    "click==8.0.4",
 ]
 
 with io.open("./camocchi/version.py", encoding="utf8") as version_f:
@@ -63,6 +66,6 @@ setup(
     ],
     keywords=(),
     entry_points={
-        "console_scripts": ["capture_image = capture_image.__main__:start"],
+        "console_scripts": ["camocchi = camocchi.cli:main"],
     },
 )
