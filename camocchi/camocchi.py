@@ -10,7 +10,7 @@ class Camocchi:
         name: str = os.getenv("OCCHI_PATH_IMAGE", "image.png"),
         time: int = 2,
         debug: bool = False,
-        module: str = "continuos"
+        module: str = "continuos",
     ) -> None:
         self.logger = logging.getLogger("Occhi Log |")
         self.name = name

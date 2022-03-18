@@ -1,6 +1,3 @@
-# -*- encoding: utf-8 -*-
-# Source: https://packaging.python.org/guides/distributing-packages-using-setuptools/
-# type: ignore
 import io
 import re
 

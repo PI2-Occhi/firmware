@@ -3,11 +3,9 @@ OCCHI_PATH_IMAGE:=/etc/occhi/source.png
 export OCCHI_PATH_IMAGE
 
 clean:
-	@find ./ -name '__pycache__' -exec rm -rf {} \;
-	@rm -rf .cache
-	@rm -rf .pytest_cache
-	@rm -rf build
-	@rm -rf dist
+	@find . -type d -name  "__pycache__" -exec rm -r {} +;
+	@find . -path "*/*.pyc"  -delete
+	@find . -path "*/*.pyo"  -delete
 	@rm -rf *.egg-info
 
 envs: 
@@ -35,5 +33,8 @@ black:
 test:
 	pytest
 
-run:
-	camocchi
+runone:
+	camocchi -m one
+
+runcontinuos:
+	camocchi -m continuos
