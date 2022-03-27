@@ -14,6 +14,19 @@ Requirements:
 * Raspberry Pi 3+
 * Python version >=3.7 in Rpi
 * Module Cam Rpi
+* Web Cam Logi 900
+
+### Bash
+
+Web Cam
+```
+fswebcam -r 1280x720 --no-banner image.jpg
+```
+
+Cam Pi
+```
+raspistill -o image.jpg
+```
 
 #### Install camocchi application:
 

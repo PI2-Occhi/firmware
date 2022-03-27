@@ -12,6 +12,7 @@ dev_requirements = [
     "pytest-cov==2.8.1",
     "pytest-mypy>=0.8.0",
     "click==8.0.4",
+    "opencv-python==4.5.5.64",
     "picamera==1.13",
 ]
 
@@ -22,6 +23,7 @@ integration_test_requirements = dev_requirements
 run_requirements = [
     "picamera==1.13",
     "click==8.0.4",
+    "opencv-python==4.5.5.64",
 ]
 
 with io.open("./camocchi/version.py", encoding="utf8") as version_f:

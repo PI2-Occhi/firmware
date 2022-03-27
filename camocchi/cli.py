@@ -5,6 +5,7 @@ import os
 
 @click.command()
 @click.option("-m", "--module", default="continuos", help="Modulo executado")
+@click.option("-c", "--cam", default="web", help="Selecionar camera")
 @click.option("-t", "--time", default=2, help="Definir um tempo.")
 @click.option(
     "-n",
@@ -14,6 +15,6 @@ import os
 )
 @click.option("-d", "--debug", default=False, help="Atividade modo debug.")
 @click.version_option()
-def main(name: str, time: int, debug: bool, module: str):
-    camocchi = Camocchi(name, time, debug, module)
+def main(name: str, time: int, debug: bool, module: str, cam: str):
+    camocchi = Camocchi(name, time, debug, module, cam)
     camocchi.run()
