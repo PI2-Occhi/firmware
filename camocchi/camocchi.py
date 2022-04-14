@@ -5,14 +5,6 @@ import logging
 import cv2
 import numpy as np
 
-# https://github.com/Itseez/opencv/blob/master/data/haarcascades/haarcascade_frontalface_default.xml
-face_cascade = cv2.CascadeClassifier(
-    "/home/pi/firmware/camocchi/haarcascade_frontalface_default.xml"
-)
-# https://github.com/Itseez/opencv/blob/master/data/haarcascades/haarcascade_eye.xml
-eye_cascade = cv2.CascadeClassifier("/home/pi/firmware/camocchi/haarcascade_eye.xml")
-
-
 class Camocchi:
     def __init__(
         self,
@@ -35,10 +27,6 @@ class Camocchi:
                 self.continuos_get_image_web()
             if self.module == "one":
                 self.take_photo_web()
-            if self.module == "ht":
-                self.equalizeHistogram()
-            if self.module == "crop":
-                self.crop_image()
 
         if self.cam == "rpi":
             if self.module == "continuos":
@@ -94,6 +82,23 @@ class Camocchi:
     def continuos_get_image_web(self) -> None:
         # Create object VideoCapture
         cam = cv2.VideoCapture(0)
+        
+        while True:
+          # initialize the camera and get photo
+        	ret, image = cam.read()
+         
+          # Use the cvtColor() function to grayscale the image
+          gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+          
+          # Equalize image
+          saida = self.equalizeHistogram(gray_image)      
+          
+          # Store image    
+          cv2.imwrite(self.name, saida)
+          cam.release()
+          
+          # Time between take photo
+        	sleep(self.time)
 
     """
     Take a photo web function
@@ -115,30 +120,8 @@ class Camocchi:
     Get Equalize histogram
     """
 
-    def equalizeHistogram(self):
-        img_bgr = cv2.imread(self.name)
-        img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    def equalizeHistogram(self, img_hsv):
         img_hsv[:, :, 2] = cv2.equalizeHist(img_hsv[:, :, 2])
         saida = cv2.cvtColor(img_hsv, cv2.COLOR_HSV2BGR)
-        # concat=cv2.hconcat((img_bgr,saida))
-        cv2.imwrite(self.name, saida)
-
-    """
-    Get crop image
-    """
-
-    def crop_image(self):
-        img = cv2.imread(self.name)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-
-        for (x, y, w, h) in faces:
-            cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
-            roi_gray = gray[y : y + h, x : x + w]
-            roi_color = img[y : y + h, x : x + w]
-
-            eyes = eye_cascade.detectMultiScale(roi_gray)
-            for (ex, ey, ew, eh) in eyes:
-                crop_img = img[ey : ey + eh, ex : ex + ew]
-                cv2.imwrite(self.name, eyes)
-                cv2.rectangle(roi_color, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
+        
+        return saida
