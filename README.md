@@ -24,8 +24,8 @@
 
 1. Set enviroments of espressif idf
 ```sh
-cd $IDF_PATH
-. $IDF_PATH/esp/esp-idf/export.sh
+cd $HOME
+. $HOME/esp/esp-idf/export.sh
 ```
 
 2. Define home folder of project and initialization with example
