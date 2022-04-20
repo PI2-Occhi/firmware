@@ -1,9 +1,10 @@
-from time import sleep
 from picamera import PiCamera
-import os
+from .histogram import equalize_histogram
+from time import sleep
 import logging
 import cv2
-import numpy as np
+import os
+
 
 class Camocchi:
     def __init__(
@@ -13,6 +14,7 @@ class Camocchi:
         debug: bool = False,
         module: str = "continuos",
         cam: str = "web",
+        dohistogram: bool = True,
     ) -> None:
         self.logger = logging.getLogger("Occhi Log |")
         self.name = name
@@ -20,6 +22,7 @@ class Camocchi:
         self.debug = debug
         self.module = module
         self.cam = cam
+        self.dohistogram = dohistogram
 
     def run(self):
         if self.cam == "web":
@@ -76,29 +79,40 @@ class Camocchi:
         camera.capture(self.name)
 
     """
-    Continuos function web 
+    Continuos function web
     """
 
     def continuos_get_image_web(self) -> None:
         # Create object VideoCapture
         cam = cv2.VideoCapture(0)
-        
+
         while True:
-          # initialize the camera and get photo
-        	ret, image = cam.read()
-         
-          # Use the cvtColor() function to grayscale the image
-          gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-          
-          # Equalize image
-          saida = self.equalizeHistogram(gray_image)      
-          
-          # Store image    
-          cv2.imwrite(self.name, saida)
-          cam.release()
-          
-          # Time between take photo
-        	sleep(self.time)
+            # initialize the camera and get photo
+            ret, image = cam.read()
+
+            if self.dohistogram:
+
+                # Equalize image
+                out_image = equalize_histogram(src=image)
+                if self.debug:
+                    self.logger.info(f"Image {self.name} equalized!")
+
+                # Store image
+                cv2.imwrite(self.name, out_image)
+
+                if self.debug:
+                    self.logger.info(f"Frame {self.name} stored!")
+
+            else:
+                # To grayscale
+                out_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                if self.debug:
+                    self.logger.info(f"Image {self.name} in grayscale!")
+
+                # Store image
+                cv2.imwrite(self.name, out_image)
+                if self.debug:
+                    self.logger.info(f"Frame {self.name} stored!")
 
     """
     Take a photo web function
@@ -107,6 +121,8 @@ class Camocchi:
     def take_photo_web(self) -> None:
         # initialize the camera
         cam = cv2.VideoCapture(0)
+
+        # capture figure
         ret, image = cam.read()
 
         # Use the cvtColor() function to grayscale the image
@@ -114,14 +130,8 @@ class Camocchi:
 
         # Take image
         cv2.imwrite(self.name, gray_image)
+
+        if self.debug:
+            self.logger.info(f"Image {self.name} equalized!")
+
         cam.release()
-
-    """
-    Get Equalize histogram
-    """
-
-    def equalizeHistogram(self, img_hsv):
-        img_hsv[:, :, 2] = cv2.equalizeHist(img_hsv[:, :, 2])
-        saida = cv2.cvtColor(img_hsv, cv2.COLOR_HSV2BGR)
-        
-        return saida
