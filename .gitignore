@@ -132,3 +132,5 @@ dmypy.json
 development.db
 
 cov.xml
+
+/firmware/build
