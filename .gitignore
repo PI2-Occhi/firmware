@@ -133,4 +133,4 @@ development.db
 
 cov.xml
 
-/firmware/build
+build
