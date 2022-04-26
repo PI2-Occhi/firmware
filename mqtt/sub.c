@@ -1,3 +1,7 @@
+// Code: sub.c
+// Author: Matheus Gois Vieira
+// Project: Occhi
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

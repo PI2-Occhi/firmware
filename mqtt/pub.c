@@ -1,6 +1,6 @@
 // Code: pub.c
 // Author: Matheus Gois Vieira
-// Company: IDVLab
+// Project: Occhi
 
 #include "stdio.h"
 #include "stdlib.h"
