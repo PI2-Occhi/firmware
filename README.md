@@ -1,6 +1,12 @@
 # ESP OCCHI
 
+> The firmware from Occhi Project can perform the below features:
 > Controller low level for get data sensors and control actuators of project Occhi.
+
+* Get photo of user
+* Process collected image
+* Get data sensors
+* Send data sensors to MQTT Broker
 
 ## Sensors
 
@@ -56,19 +62,14 @@ idf.py -p PORT flash monitor
 screen /dev/ttyUSB0 115200
 ```
 
-## Run project
+## Run project in python
 
 1. Install depencys
 ```sh
-screen /dev/ttyUSB0 115200
-```
-
-2. Build projects
-```sh
-screen /dev/ttyUSB0 115200
+pip3 install -e .
 ```
 
 3. Run projects
 ```sh
-screen /dev/ttyUSB0 115200
+python3 camocchi/continuos_simple.py 
 ```
