@@ -2,6 +2,7 @@
     Main Project
     author: Debora Fernandes e Matheus Gois
     description: control occhi
+    struct: led_rgb led_2 = {.pin = 2, .color = "red"};
 */
 
 #include <stdio.h>
@@ -14,13 +15,10 @@ void set_state_led(led_rgb *led, uint8_t state)
     gpio_set_level(led->pin, state); /* Set the GPIO level according to the state (LOW or HIGH)*/
 }
 
-void configure_led(led_rgb *led, gpio_num_t pin, char* color)
+void init_led(led_rgb *led)
 {
-    ESP_LOGI(TAG, "Configured GPIO LED %d %s!", pin, color);
+    ESP_LOGI(TAG, "Configured GPIO LED %d %s!", led -> pin , led -> color );
 
-    led -> pin = pin;    
-    led -> color = color; 
-
-    gpio_reset_pin(pin);
-    gpio_set_direction(pin, GPIO_MODE_OUTPUT); /* Set the GPIO as a push/pull output */
+    gpio_reset_pin(led -> pin);
+    gpio_set_direction(led -> pin, GPIO_MODE_OUTPUT); /* Set the GPIO as a push/pull output */
 }

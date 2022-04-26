@@ -15,7 +15,7 @@ typedef struct {
     char* color;
 } led_rgb;
 
-void configure_led(led_rgb *led, gpio_num_t pin, char* color);
+void init_led(led_rgb *led);
 void set_state_led(led_rgb *led, uint8_t state);
 
 #ifdef __cplusplus

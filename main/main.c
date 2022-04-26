@@ -1,28 +1,24 @@
-/* 
-    Main Project
-    author: Debora Fernandes e Matheus Gois
-    description: control occhi
-*/
-
-
 #include <stdio.h>
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_log.h"
-#include "sdkconfig.h"
-#include "driver/gpio.h"
-
+#include <string.h>
 #include "led.h"
-#include "buzzer.h"
-#include "hcsr.h"
+#include "uart.h"
 
-static const char *TAG = "OCCHI";
+led_rgb led_2 = {.pin = 2, .color = "red"};
 
 void app_main(void)
 {
+    init_led(&led_2);
+    initUart();
 
-    while (1) {
-            ESP_LOGI(TAG, "Project");
+    while (1)
+    {
+        char* byte_command = readByte();
+
+        if (strcmp(byte_command, "a") == 0) {
+            set_state_led(&led_2,  1);
+        }
+        if (strcmp(byte_command, "d") == 0) {
+            set_state_led(&led_2,  0);
+        }
     }
 }
