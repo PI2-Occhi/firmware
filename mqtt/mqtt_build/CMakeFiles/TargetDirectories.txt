@@ -1,0 +1,6 @@
+/home/pi/firmware/mqtt/mqtt_build/CMakeFiles/edit_cache.dir
+/home/pi/firmware/mqtt/mqtt_build/CMakeFiles/rebuild_cache.dir
+/home/pi/firmware/mqtt/mqtt_build/CMakeFiles/mqtt.dir
+/home/pi/firmware/mqtt/mqtt_build/src/CMakeFiles/edit_cache.dir
+/home/pi/firmware/mqtt/mqtt_build/src/CMakeFiles/rebuild_cache.dir
+/home/pi/firmware/mqtt/mqtt_build/src/CMakeFiles/mqtt_client.dir
