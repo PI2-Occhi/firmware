@@ -1,0 +1,14 @@
+{
+    "host": "10.0.0.120",
+    "port": 1883,
+    "keepalive": 60,
+    "username": "occhi",
+    "password": "12345",
+    "topic_path_image": "/eyetracking/image",
+    "topic_sensor_battery": "/sensors/battery",
+    "topic_sensor_hcsr": "/sensors/hcsr",
+    "topic_sensor_gyro": "/sensors/gyro",
+    "topic_sensor_piezo": "/sensors/piezo",
+    "topic_motors": "/movement/instructions",
+    "qos": 0
+}
