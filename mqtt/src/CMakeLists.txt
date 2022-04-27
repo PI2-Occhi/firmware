@@ -1,1 +1,0 @@
-add_library(mqtt_occhi mqtt_occhi.c)
