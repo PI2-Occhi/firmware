@@ -1,17 +1,20 @@
 #include <stdio.h>
-#include <string.h>
 #include "led.h"
+#include "motor.h"
 #include "uart.h"
-#include "battery.h"
+#include "buzzer.h"
+#include "hcsr.h"
+
 led_rgb led_2 = {.pin = 2, .color = "red"};
 
 void app_main(void)
 {
+    uint32_t hall_sensor_value = init_motor();
     init_led(&led_2);
+    set_state_led(&led_2, 1);
 
     while (1)
     {
-        printf("Projeto Occhi");
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        run_motor(hall_sensor_value);
     }
 }

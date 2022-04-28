@@ -2,277 +2,215 @@
     Project Motor BLDC
     author: Debora Fernandes e Matheus Gois
     description: Control occhi
+    base_code: mcpwm_bldc_hall_control_example_main.c
 */
 
 #include <stdio.h>
 #include "motor.h"
 
+static const char *TAG_MOTOR = "MOTOR OCCHI";
 
-long map(long x, long in_min, long in_max, long out_min, long out_max) {
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+static inline uint32_t bldc_get_hall_sensor_value(bool ccw)
+{
+    uint32_t hall_val = gpio_get_level(HALL_CAP_U_GPIO) * 4 + gpio_get_level(HALL_CAP_V_GPIO) * 2 + gpio_get_level(HALL_CAP_W_GPIO) * 1;
+    return ccw ? hall_val ^ (0x07) : hall_val;
 }
 
-void motor_initialization(motor *motor) {
-
-    gpio_set_direction(GPIO_HALL1, GPIO_MODE_INPUT);
-    gpio_set_direction(GPIO_HALL2, GPIO_MODE_INPUT);
-    gpio_set_direction(GPIO_HALL3, GPIO_MODE_INPUT);
-    gpio_set_direction(GPIO_HIGHSIZE_A, GPIO_MODE_OUTPUT);
-    gpio_set_direction(GPIO_HIGHSIZE_B, GPIO_MODE_OUTPUT);
-    gpio_set_direction(GPIO_HIGHSIZE_C, GPIO_MODE_OUTPUT);
-    gpio_set_direction(GPIO_LOWSIZE_A, GPIO_MODE_OUTPUT);
-    gpio_set_direction(GPIO_LOWSIZE_B, GPIO_MODE_OUTPUT);
-    gpio_set_direction(GPIO_LOWSIZE_C, GPIO_MODE_OUTPUT);
-
+static bool IRAM_ATTR bldc_hall_updated(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_channel, const cap_event_data_t *edata, void *user_data)
+{
+    TaskHandle_t task_to_notify = (TaskHandle_t)user_data;
+    BaseType_t high_task_wakeup = pdFALSE;
+    vTaskNotifyGiveFromISR(task_to_notify, &high_task_wakeup);
+    return high_task_wakeup == pdTRUE;
 }
 
-mcpwm_set_frequency( mcpwm_unit_t mcpwm_num , mcpwm_timer_t timer_num, uint32_t frequência)
-
-void control_loop() {
-    throttle = gpio_get_level(0);
-    hSpeed = map(throttle, 560, 1023, 0, 254);
-    ahSpeed = map(throttle, 0, 460, 254, 0);
-    static inline uint32_t
-
-    VarHall = gpio_get_level(GPIO_HALL1) + (2 * gpio_get_level(GPIO_HALL2)) + (4 * gpio_get_level(GPIO_HALL3));
-
-    if (throttle > 560) {
-        sentido_horario();
-    } else if (throttle < 460) {
-        sentido_anti_horario();
-    } else if (throttle < 560 && throttle > 460) {
-        brake = gpio_get_level(1);
-        frSpeed = map(brake, 0, 1023, 0, 255);
-        freio_regenerativo();
+static void update_bldc_speed(void *arg) {
+    static float duty = PWM_MIN_DUTY;
+    static float duty_step = PWM_DUTY_STEP;
+    duty += duty_step;
+    if (duty > PWM_MAX_DUTY || duty < PWM_MIN_DUTY) {
+        duty_step *= -1;
     }
+    mcpwm_set_duty(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, BLDC_MCPWM_GEN_HIGH, duty);
+    mcpwm_set_duty(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, BLDC_MCPWM_GEN_LOW, duty);
+    mcpwm_set_duty(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, BLDC_MCPWM_GEN_HIGH, duty);
+    mcpwm_set_duty(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, BLDC_MCPWM_GEN_LOW, duty);
+    mcpwm_set_duty(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, BLDC_MCPWM_GEN_HIGH, duty);
+    mcpwm_set_duty(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, BLDC_MCPWM_GEN_LOW, duty);
 }
 
-void sentido_horario() {
-    switch (VarHall) {
-        case 5:
-            gpio_set_level(0, 1);
-            gpio_set_level(1, 1);
-            gpio_set_level(2, 1);
-            gpio_set_level(3, 1);
-            gpio_set_level(4, 1);
-            gpio_set_level(7, 0);
-
-            gpio_set_level(5, 1);
-
-            gpio_set_level(9, 0);
-            gpio_set_level(10, hSpeed);
-            gpio_set_level(11, 0);
-            break;
-
-        case 1:
-            gpio_set_level(0, 1);
-            gpio_set_level(1, 1);
-            gpio_set_level(2, 1);
-            gpio_set_level(3, 1);
-            gpio_set_level(4, 1);
-            gpio_set_level(7, 0);
-
-            gpio_set_level(7, 1);
-
-            gpio_set_level(9, 0);
-            gpio_set_level(10, hSpeed);
-            gpio_set_level(1, 0);
-            break;
-
-        case 3:
-            gpio_set_level(0, 1);
-            gpio_set_level(1, 1);
-            gpio_set_level(2, 1);
-            gpio_set_level(3, 1);
-            gpio_set_level(4, 1);
-            gpio_set_level(7, 0);
-
-            gpio_set_level(7, 1);
-            gpio_set_level(9, hSpeed);
-            gpio_set_level(10, 0);
-            gpio_set_level(11, 0);
-            break;
-
-        case 2:
-            gpio_set_level(0, 1);
-            gpio_set_level(1, 1);
-            gpio_set_level(2, 1);
-            gpio_set_level(3, 1);
-            gpio_set_level(4, 1);
-            gpio_set_level(6, 0);
-
-            gpio_set_level(6, 1);
-            gpio_set_level(9, hSpeed);
-            gpio_set_level(0, 0);
-            gpio_set_level(11, 0);
-            break;
-
-        case 6:
-            gpio_set_level(0, 1);
-            gpio_set_level(1, 1);
-            gpio_set_level(2, 1);
-            gpio_set_level(3, 1);
-            gpio_set_level(4, 1);
-            gpio_set_level(6, 0);
-
-            gpio_set_level(6, 1);
-            gpio_set_level(9, 0);
-            gpio_set_level(10, 0);
-            gpio_set_level(11, hSpeed);
-            break;
-
-        case 4:
-            gpio_set_level(0, 1);
-            gpio_set_level(1, 1);
-            gpio_set_level(2, 1);
-            gpio_set_level(3, 1);
-            gpio_set_level(4, 1);
-            gpio_set_level(5, 0);
-
-            gpio_set_level(5, 1);
-            gpio_ggpio_set_levelet_level(9, 0);
-            gpio_set_level(10, 0);
-            gpio_set_level(11, hSpeed);
-            break;
-    }
+// U+V- / A+B-
+static void bldc_set_phase_up_vm(void) {
+    mcpwm_set_duty_type(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, BLDC_MCPWM_GEN_HIGH, MCPWM_DUTY_MODE_0); // U+ = PWM
+    mcpwm_deadtime_enable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE, 3, 3); // U- = _PWM_
+    mcpwm_deadtime_disable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V);
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, BLDC_MCPWM_GEN_HIGH); // V+ = 0
+    mcpwm_set_signal_high(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, BLDC_MCPWM_GEN_LOW); // V- = 1
+    mcpwm_deadtime_disable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W);
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, BLDC_MCPWM_GEN_HIGH); // W+ = 0
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, BLDC_MCPWM_GEN_LOW);  // W- = 0
 }
 
-void sentido_anti_horario() {
-    switch (VarHall) {
-
-        case 5:
-            gpio_set_level(0, 1);
-            gpio_set_level(1, 1);
-            gpio_set_level(2, 1);
-            gpio_set_level(3, 1);
-            gpio_set_level(4, 1);
-            gpio_set_level(6, 0);
-
-            gpio_set_level(6, 1);
-            gpio_set_level(9, hSpeed);
-            gpio_set_level(10, 0);
-            gpio_set_level(11, 0);
-            break;
-
-        case 1:
-            gpio_set_level(0, 1);
-            gpio_set_level(1, 1);
-            gpio_set_level(2, 1);
-            gpio_set_level(3, 1);
-            gpio_set_level(4, 1);
-            gpio_set_level(6, 0);
-
-            gpio_set_level(6, 1);
-            gpio_set_level(9, 0);
-            gpio_set_level(10, 0);
-            gpio_set_level(11, hSpeed);
-            break;
-
-        case 3:
-            gpio_set_level(0, 1);
-            gpio_set_level(1, 1);
-            gpio_set_level(2, 1);
-            gpio_set_level(3, 1);
-            gpio_set_level(4, 1);
-            gpio_set_level(5, 0);
-
-            gpio_set_level(5, 1);
-            gpio_ggpio_set_levelet_level(9, 0);
-            gpio_set_level(10, 0);
-            gpio_set_level(11, hSpeed);
-            break;
-
-        case 2:
-            gpio_set_level(0, 1);
-            gpio_set_level(1, 1);
-            gpio_set_level(2, 1);
-            gpio_set_level(3, 1);
-            gpio_set_level(4, 1);
-            gpio_set_level(5, 0);
-
-            gpio_set_level(5, 1);
-            gpio_ggpio_set_levelet_level(9, 0);
-            gpio_set_level(10, hSpeed);
-            gpio_set_level(11, 0);
-            break;
-
-        case 6:
-            gpio_set_level(0, 1);
-            gpio_set_level(1, 1);
-            gpio_set_level(2, 1);
-            gpio_set_level(3, 1);
-            gpio_set_level(4, 1);
-            gpio_set_level(7, 0);
-
-            gpio_set_level(7, 1);
-            gpio_ggpio_set_levelet_level(9, 0);
-            gpio_set_level(10, hSpeed);
-            gpio_set_level(11, 0);
-            break;
-
-        case 4:
-            gpio_set_level(0, 1);
-            gpio_set_level(1, 1);
-            gpio_set_level(2, 1);
-            gpio_set_level(3, 1);
-            gpio_set_level(4, 1);
-            gpio_set_level(7, 0);
-
-            gpio_set_level(7, 1);
-            gpio_ggpio_set_levelet_level(9, hSpeed;
-            gpio_set_level(10, 0);
-            gpio_set_level(11, 0);
-            break;
-            break;
-    }
+// W+U- / C+A-
+static void bldc_set_phase_wp_um(void) {
+    mcpwm_deadtime_disable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U);
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, BLDC_MCPWM_GEN_HIGH); // U+ = 0
+    mcpwm_set_signal_high(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, BLDC_MCPWM_GEN_LOW); // U- = 1
+    mcpwm_deadtime_disable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V);
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, BLDC_MCPWM_GEN_HIGH); // V+ = 0
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, BLDC_MCPWM_GEN_LOW);  // V- = 0
+    mcpwm_set_duty_type(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, BLDC_MCPWM_GEN_HIGH, MCPWM_DUTY_MODE_0); // W+ = PWM
+    mcpwm_deadtime_enable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE, 3, 3); // W- = _PWM_
 }
 
-void freio_regenerativo() {
-    gpio_set_level(0, 1);
-    gpio_set_level(1, 1);
-    gpio_set_level(2, 1);
-    gpio_set_level(3, 1);
-    gpio_set_level(4, 1);
-    gpio_set_level(5, 0);
-    gpio_set_level(6, 0);
-    gpio_set_level(7, 0);
+// W+V- / C+B-
+static void bldc_set_phase_wp_vm(void) {
+    mcpwm_deadtime_disable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U);
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, BLDC_MCPWM_GEN_HIGH); // U+ = 0
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, BLDC_MCPWM_GEN_LOW);  // U- = 0
+    mcpwm_deadtime_disable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V);
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, BLDC_MCPWM_GEN_HIGH); // V+ = 0
+    mcpwm_set_signal_high(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, BLDC_MCPWM_GEN_LOW); // V- = 1
+    mcpwm_set_duty_type(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, BLDC_MCPWM_GEN_HIGH, MCPWM_DUTY_MODE_0); // W+ = PWM
+    mcpwm_deadtime_enable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE, 3, 3); // W- = _PWM_
+}
 
-    switch (VarHall) {
+// V+U- / B+A-
+static void bldc_set_phase_vp_um(void) {
+    mcpwm_deadtime_disable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U);
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, BLDC_MCPWM_GEN_HIGH); // U+ = 0
+    mcpwm_set_signal_high(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, BLDC_MCPWM_GEN_LOW); // U- = 1
+    mcpwm_set_duty_type(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, BLDC_MCPWM_GEN_HIGH, MCPWM_DUTY_MODE_0); // V+ = PWM
+    mcpwm_deadtime_enable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE, 3, 3); // V- = _PWM_
+    mcpwm_deadtime_disable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W);
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, BLDC_MCPWM_GEN_HIGH); // W+ = 0
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, BLDC_MCPWM_GEN_LOW);  // W- = 0
+}
 
-        case 3:
-            gpio_set_level(9, frSpeed);
-            gpio_set_level(10, 0);
-            gpio_set_level(11, 0);
-            break;
+// V+W- / B+C-
+static void bldc_set_phase_vp_wm(void) {
+    mcpwm_deadtime_disable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U);
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, BLDC_MCPWM_GEN_HIGH); // U+ = 0
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, BLDC_MCPWM_GEN_LOW);  // U- = 0
+    mcpwm_set_duty_type(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, BLDC_MCPWM_GEN_HIGH, MCPWM_DUTY_MODE_0); // V+ = PWM
+    mcpwm_deadtime_enable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE, 3, 3); // V- = _PWM_
+    mcpwm_deadtime_disable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W);
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, BLDC_MCPWM_GEN_HIGH); // W+ = 0
+    mcpwm_set_signal_high(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, BLDC_MCPWM_GEN_LOW); // W- = 1
+}
 
-        case 1:
-            gpio_set_level(9, frSpeed);
-            gpio_set_level(0, 0);
-            gpio_set_level(11, 0);
-            break;
+// U+W- / A+C-
+static void bldc_set_phase_up_wm(void) {
+    mcpwm_set_duty_type(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, BLDC_MCPWM_GEN_HIGH, MCPWM_DUTY_MODE_0); // U+ = PWM
+    mcpwm_deadtime_enable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE, 3, 3); // U- = _PWM_
+    mcpwm_deadtime_disable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V);
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, BLDC_MCPWM_GEN_HIGH); // V+ = 0
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, BLDC_MCPWM_GEN_LOW); // V- = 0
+    mcpwm_deadtime_disable(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W);
+    mcpwm_set_signal_low(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, BLDC_MCPWM_GEN_HIGH); // W+ = 0
+    mcpwm_set_signal_high(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, BLDC_MCPWM_GEN_LOW); // W- = 1
+}
 
-        case 5:
-            gpio_set_level(9, 0);
-            gpio_set_level(10, 0);
-            gpio_set_level(11, frSpeed);
-            break;
+uint32_t init_motor() {
+    uint32_t hall_sensor_value = 0;
+    TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
 
-        case 4:
-            gpio_set_level(9, 0);
-            gpio_set_level(10, 0);
-            gpio_set_level(11, frSpeed);
-            break;
+    ESP_LOGI(TAG_MOTOR, "Disable gate driver");
+    gpio_config_t drv_en_config = {
+            .mode = GPIO_MODE_OUTPUT,
+            .pin_bit_mask = 1 << BLDC_DRV_EN_GPIO,
+    };
+    ESP_ERROR_CHECK(gpio_config(&drv_en_config));
+    gpio_set_level(BLDC_DRV_EN_GPIO, 0);
 
-        case 6:
-            gpio_set_level(9, 0);
-            gpio_set_level(10, frSpeed);
-            gpio_set_level(11, 0);
-            break;
+    ESP_LOGI(TAG_MOTOR, "Setup PWM and Hall GPIO (pull up internally)");
+    mcpwm_pin_config_t mcpwm_gpio_config = {
+            .mcpwm0a_out_num = BLDC_PWM_UH_GPIO,
+            .mcpwm0b_out_num = BLDC_PWM_UL_GPIO,
+            .mcpwm1a_out_num = BLDC_PWM_VH_GPIO,
+            .mcpwm1b_out_num = BLDC_PWM_VL_GPIO,
+            .mcpwm2a_out_num = BLDC_PWM_WH_GPIO,
+            .mcpwm2b_out_num = BLDC_PWM_WL_GPIO,
+            .mcpwm_cap0_in_num   = HALL_CAP_U_GPIO,
+            .mcpwm_cap1_in_num   = HALL_CAP_V_GPIO,
+            .mcpwm_cap2_in_num   = HALL_CAP_W_GPIO,
+            .mcpwm_sync0_in_num  = -1,  //Not used
+            .mcpwm_sync1_in_num  = -1,  //Not used
+            .mcpwm_sync2_in_num  = -1,  //Not used
+            .mcpwm_fault0_in_num = BLDC_DRV_FAULT_GPIO,
+            .mcpwm_fault1_in_num = -1,  //Not used
+            .mcpwm_fault2_in_num = -1   //Not used
+    };
+    ESP_ERROR_CHECK(mcpwm_set_pin(BLDC_MCPWM_GROUP, &mcpwm_gpio_config));
+    // In case there's no pull-up resister for hall sensor on board
+    gpio_pullup_en(HALL_CAP_U_GPIO);
+    gpio_pullup_en(HALL_CAP_V_GPIO);
+    gpio_pullup_en(HALL_CAP_W_GPIO);
+    gpio_pullup_en(BLDC_DRV_FAULT_GPIO);
 
-        case 2:
-            gpio_set_level(9, 0);
-            gpio_set_level(10, frSpeed);
-            gpio_set_level(11, 0);
-            break;
+    ESP_LOGI(TAG_MOTOR, "Initialize PWM (default to turn off all MOSFET)");
+    mcpwm_config_t pwm_config = {
+            .frequency = PWM_DEFAULT_FREQ,
+            .cmpr_a = PWM_MIN_DUTY,
+            .cmpr_b = PWM_MIN_DUTY,
+            .counter_mode = MCPWM_UP_COUNTER,
+            .duty_mode = MCPWM_HAL_GENERATOR_MODE_FORCE_LOW,
+    };
+    ESP_ERROR_CHECK(mcpwm_init(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, &pwm_config));
+    ESP_ERROR_CHECK(mcpwm_init(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, &pwm_config));
+    ESP_ERROR_CHECK(mcpwm_init(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, &pwm_config));
+
+    ESP_LOGI(TAG_MOTOR, "Initialize over current fault action");
+    ESP_ERROR_CHECK(mcpwm_fault_init(BLDC_MCPWM_GROUP, MCPWM_LOW_LEVEL_TGR, BLDC_DRV_OVER_CURRENT_FAULT));
+    ESP_ERROR_CHECK(mcpwm_fault_set_cyc_mode(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_U, BLDC_DRV_OVER_CURRENT_FAULT,
+                                             MCPWM_ACTION_FORCE_LOW, MCPWM_ACTION_FORCE_LOW));
+    ESP_ERROR_CHECK(mcpwm_fault_set_cyc_mode(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_V, BLDC_DRV_OVER_CURRENT_FAULT,
+                                             MCPWM_ACTION_FORCE_LOW, MCPWM_ACTION_FORCE_LOW));
+    ESP_ERROR_CHECK(mcpwm_fault_set_cyc_mode(BLDC_MCPWM_GROUP, BLDC_MCPWM_TIMER_W, BLDC_DRV_OVER_CURRENT_FAULT,
+                                             MCPWM_ACTION_FORCE_LOW, MCPWM_ACTION_FORCE_LOW));
+
+    ESP_LOGI(TAG_MOTOR, "Initialize Hall sensor capture");
+    mcpwm_capture_config_t cap_config = {
+            .cap_edge = MCPWM_BOTH_EDGE,
+            .cap_prescale = 1,
+            .capture_cb = bldc_hall_updated,
+            .user_data = cur_task,
+    };
+    ESP_ERROR_CHECK(mcpwm_capture_enable_channel(BLDC_MCPWM_GROUP, 0, &cap_config));
+    ESP_ERROR_CHECK(mcpwm_capture_enable_channel(BLDC_MCPWM_GROUP, 1, &cap_config));
+    ESP_ERROR_CHECK(mcpwm_capture_enable_channel(BLDC_MCPWM_GROUP, 2, &cap_config));
+    ESP_LOGI(TAG_MOTOR, "Please turn on the motor power");
+    vTaskDelay(pdMS_TO_TICKS(5000));
+    ESP_LOGI(TAG_MOTOR, "Enable gate driver");
+    gpio_set_level(BLDC_DRV_EN_GPIO, 1);
+    ESP_LOGI(TAG_MOTOR, "Changing speed at background");
+    const esp_timer_create_args_t bldc_timer_args = {
+            .callback = update_bldc_speed,
+            .name = "bldc_speed"
+    };
+    esp_timer_handle_t bldc_speed_timer;
+    ESP_ERROR_CHECK(esp_timer_create(&bldc_timer_args, &bldc_speed_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(bldc_speed_timer, 2000000));
+
+    return hall_sensor_value;
+}
+
+static const bldc_hall_phase_action_t s_hall_actions[] = {
+        [2] = bldc_set_phase_up_vm,
+        [6] = bldc_set_phase_wp_vm,
+        [4] = bldc_set_phase_wp_um,
+        [5] = bldc_set_phase_vp_um,
+        [1] = bldc_set_phase_vp_wm,
+        [3] = bldc_set_phase_up_wm,
+};
+
+void run_motor(int32_t hall_sensor_value) {
+    // The rotation direction is controlled by inverting the hall sensor value
+    hall_sensor_value = bldc_get_hall_sensor_value(false);
+    if (hall_sensor_value >= 1 && hall_sensor_value <= sizeof(s_hall_actions) / sizeof(s_hall_actions[0])) {
+        s_hall_actions[hall_sensor_value]();
+    } else {
+        ESP_LOGE(TAG_MOTOR, "invalid bldc phase, wrong hall sensor value:%d", hall_sensor_value);
     }
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 }

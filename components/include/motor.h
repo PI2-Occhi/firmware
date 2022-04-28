@@ -9,63 +9,44 @@
 #include "esp_attr.h" 
 #include "esp_log.h"
 
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-//Variáveis que recebem os valores dos sensores Hall
-#define GPIO_HALL1       2 
-#define GPIO_HALL2       3
-#define GPIO_HALL3       4
+#define PWM_DEFAULT_FREQ   14400
+#define PWM_MIN_DUTY       40.0
+#define PWM_MAX_DUTY       80.0
+#define PWM_DUTY_STEP      5.0
+#define BLDC_MCPWM_GROUP   0
+#define BLDC_MCPWM_TIMER_U 0
+#define BLDC_MCPWM_TIMER_V 1
+#define BLDC_MCPWM_TIMER_W 2
+#define BLDC_MCPWM_GEN_HIGH MCPWM_GEN_A
+#define BLDC_MCPWM_GEN_LOW  MCPWM_GEN_B
 
-// Saídas para ativação dos MOSFET's do inversor trifásico
-#define GPIO_HIGHSIZE_A  5 // Saídas digitais HIGH SIDE (0 ou 1)
-#define GPIO_HIGHSIZE_B  6
-#define GPIO_HIGHSIZE_C  7
-#define GPIO_LOWSIZE_A   9 // Saídas PWM LOW SIDE (0 a 254)
-#define GPIO_LOWSIZE_B   10
-#define GPIO_LOWSIZE_C   11
-#define GPIO_LOW         0
 
-// Definição para configuração do PWM
-#define LEDC_FADE_TIME    500
-#define LEDC_RESOLUTION   1024
-#define LEDC_FREQ         5000
+#define BLDC_DRV_EN_GPIO    18
+#define BLDC_DRV_FAULT_GPIO 19
+#define BLDC_DRV_OVER_CURRENT_FAULT MCPWM_SELECT_F0
 
-// Structure of motor
-typedef struct {
-	gpio_num_t hall1;
-    gpio_num_t hall2;
-    gpio_num_t hall3;
+#define BLDC_PWM_UH_GPIO 21
+#define BLDC_PWM_UL_GPIO 22
+#define BLDC_PWM_VH_GPIO 23
+#define BLDC_PWM_VL_GPIO 25
+#define BLDC_PWM_WH_GPIO 26
+#define BLDC_PWM_WL_GPIO 27
 
-    gpio_num_t HighSizeA;
-    gpio_num_t HighSizeB;
-    gpio_num_t HighSizeC;
+//Variables from sensor Hall
+#define HALL_CAP_U_GPIO  2
+#define HALL_CAP_V_GPIO  4
+#define HALL_CAP_W_GPIO  5
 
-    gpio_num_t LowSizeA;
-    gpio_num_t LowSizeB;
-    gpio_num_t LowSizeC;
-} motor;
+// Structure sensor hall
+typedef void (*bldc_hall_phase_action_t)(void);
 
-int8_t SensorHall1; // Variáveis para os três sensores Hall (1,2,3)
-int8_t SensorHall2;
-int8_t SensorHall3;
-uint32_t VarHall = 1; // Variável para armazenar o valor decimal convertido dos 3 sensores hall
-int8_t hSpeed = 0; //Variável para receber o valor PWM para rotação do motor no sentido horário
-int8_t ahSpeed = 0; //Variável para receber o valor PWM para rotação do motor no sentido anti-horário
-int8_t frSpeed = 0; //Variável para receber o valor PWM para o freio regenerativo
-int8_t throttle = 0; //Variável para receber o valor análógico do potenciômetro de controle do
-//motor ligado em A0
-int8_t brake = 0; /*Variável para receber o valor análógico do potenciômetro de controle do freio
-    regenerativo ligado em A1*/
-
-void init_motor(motor *motor);
-void set_state_motor(motor *motor);
-void toggle_motor_time(motor *motor);
-void motor_initialization(motor *motor);
-void loop();
+// Funtion of control
+uint32_t init_motor();
+void run_motor(int32_t hall_sensor_value);
 
 #ifdef __cplusplus
 }
