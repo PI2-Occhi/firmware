@@ -1,6 +1,6 @@
 # Parse MQTT UART
 
-## Data motor fro mqtt
+### Data motor from mqtt
 ````sh
 {
     "forward": true,
